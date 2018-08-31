@@ -3,11 +3,20 @@ var suppressUpdate = false;
 var update; 
 var map;
 var panorama;
-
-
+var googleUser;
+var varsds;
 function initialize() {
     var sv = new google.maps.StreetViewService();
-    var start = {lat: 33.37399724981307, lng: -111.9104243473818 };
+    //var start = {lat: 35.17376884754457, lng: 33.36219970632931 }; //Nicosias Location
+	var start = {lat: 33.37399724981307, lng: -111.9104243473818 };
+	googleUser=2;
+	//googleUser=10;
+	/* 
+	2 is for Google User Uploaded Panoramas
+	10 is for not Google User Uploaded Panoramas
+	*/
+	
+	
         //lat: 43.36730798597097, 
         //lng: -5.834250420142922
     
@@ -195,12 +204,13 @@ function done2(results) {
 }
 
 function listLocal(origin, found) {
+
     var xhttp = new XMLHttpRequest();
     // extract the exact GPS, height & orientation info
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4) {
             if (this.status == 200) {
-                //console.log(this.responseText);
+	
                 
                 //[[2,"wKYVjI6DN7DjFqXYgo-zOw"],null,[[null,null,43.36667006893445,-5.832748233898315],
                 // [183.7556304931641],[206.2729644775391,90.45455169677734,2.180722951889038]]]
@@ -251,11 +261,17 @@ function listLocal(origin, found) {
 	         } 
         }
     }
+	
+	var varsdds=locatiosCombiner(origin.lat,origin.lng);
 
-    xhttp.open("GET", "https://maps.googleapis.com/maps/api/js/GeoPhotoService.SingleImageSearch?pb=!1m5!1sapiv3!5sUS!11m2!1m1!1b0!2m4!1m2!3d"+origin.lat+"!4d"+origin.lng+"!2d50!3m10!2m2!1sen!2sGB!9m1!1e2!11m4!1m3!1e2!2b1!3e2!4m10!1e1!1e2!1e3!1e4!1e8!1e6!5m1!1e2!6m1!1e2&callback=_xdc_._v2mub5", true);
-//    xhttp.open("GET", "https://maps.googleapis.com/maps/api/js/GeoPhotoService.GetMetadata?pb=!1m5!1sapiv3!5sUS!11m2!1m1!1b0!2m1!1sen!3m3!1m2!1e2!2s" + origin.id + "!4m10!1e1!1e2!1e3!1e4!1e8!1e6!5m1!1e2!6m1!1e2&callback=_xdc_._misdlu", true);
+	xhttp.open("GET", "https://www.google.com/maps/photometa/v1?authuser=0&hl=en&pb=!1m4!1smaps_sv.tactile!11m2!2m1!1b1!2m2!1sen!2s!3m3!1m2!1e"+googleUser+"!2s" + varsdds + "!4m56!1e1!1e2!1e3!1e4!1e5!1e6!1e8!2m1!1e1!4m1!1i48!5m1!1e1!5m1!1e2!6m1!1e1!6m1!1e2!9m36!1m3!1e2!2b1!3e2!1m3!1e2!2b0!3e3!1m3!1e3!2b1!3e2!1m3!1e3!2b0!3e3!1m3!1e8!2b0!3e3!1m3!1e1!2b0!3e3!1m3!1e4!2b0!3e3!1m3!1e10!2b1!3e2!1m3!1e10!2b0!3e3", false);
+	xhttp.send(null);
 
-    xhttp.send();
+
+ //   xhttp.open("GET", "https://maps.googleapis.com/maps/api/js/GeoPhotoService.SingleImageSearch?pb=!1m5!1sapiv3!5sUS!11m2!1m1!1b0!2m4!1m2!3d"+origin.lat+"!4d"+origin.lng+"!2d50!3m10!2m2!1sen!2sGB!9m1!1e2!11m4!1m3!1e2!2b1!3e2!4m10!1e1!1e2!1e3!1e4!1e8!1e6!5m1!1e2!6m1!1e2&callback=_xdc_._v2mub5", true);
+  //  xhttp.send();
+
+
 }
 
 function drawnContains (loc ) {
@@ -335,22 +351,33 @@ function getExact(id, ondone) {
         return;
     }
     lastExactId = id;
+	if(id.includes("CAoSLEFGMVFpc")){//indicates the nonGoogleUser Panoramas
+		googleUser=10;
+	}else{
+	googleUser=2;
+	}
     var xhttp = new XMLHttpRequest();
-    // extract the exact GPS, height & orientation info
+	  
     xhttp.onreadystatechange = function() {
+
+
         if (this.readyState == 4) {
-            if (this.responseText.length > 100 && this.responseText.indexOf("googleusercontent") == -1 && this.status == 200) {
+		
+
+            if (this.status == 200) {
                 // reference to user photo: ignore these as they are often inside...
                 var myRegexp = /\[\[null,null,([^\"]*)/;
                 var match = myRegexp.exec(this.responseText);
                 if (match) {
+		
                     //                 console.log("::"+match[1]+"::");
                     var strs = match[1].split(/[,\[\]]+/);
 
                     lastExactResult = strs.map(parseFloat).filter(function(x) {
                         return !isNaN(x);
                     })
-                         
+                         		
+                         	//	console.log("inside");
                     lastExactResult = {
                              lat:lastExactResult[0], 
                              lng:lastExactResult[1], 
@@ -363,14 +390,42 @@ function getExact(id, ondone) {
 
                     ondone(lastExactResult);
                 }
-            } else
+            } else{
+		
                 ondone.call();
+
+				}
         }
     }
-    xhttp.open("GET", "https://maps.googleapis.com/maps/api/js/GeoPhotoService.GetMetadata?pb=!1m5!1sapiv3!5sUS!11m2!1m1!1b0!2m1!1sen!3m3!1m2!1e2!2s" + id + "!4m10!1e1!1e2!1e3!1e4!1e8!1e6!5m1!1e2!6m1!1e2&callback=_xdc_._misdlu", true);
-    xhttp.send();
-}
 
+
+	 varsds=locatiosCombiner(panorama.location.latLng.lat(),panorama.location.latLng.lng());
+
+	
+	xhttp.open("GET", "https://www.google.com/maps/photometa/v1?authuser=0&hl=en&pb=!1m4!1smaps_sv.tactile!11m2!2m1!1b1!2m2!1sen!2s!3m3!1m2!1e"+googleUser+"!2s" + varsds + "!4m56!1e1!1e2!1e3!1e4!1e5!1e6!1e8!2m1!1e1!4m1!1i48!5m1!1e1!5m1!1e2!6m1!1e1!6m1!1e2!9m36!1m3!1e2!2b1!3e2!1m3!1e2!2b0!3e3!1m3!1e3!2b1!3e2!1m3!1e3!2b0!3e3!1m3!1e8!2b0!3e3!1m3!1e1!2b0!3e3!1m3!1e4!2b0!3e3!1m3!1e10!2b1!3e2!1m3!1e10!2b0!3e3", false);
+
+	xhttp.send(null);
+
+	//xhttp.open("GET", "https://maps.googleapis.com/maps/api/js/GeoPhotoService.GetMetadata?pb=!1m5!1sapiv3!5sUS!11m2!1m1!1b0!2m1!1sen!3m3!1m2!1e2!2s" + id + "!4m10!1e1!1e2!1e3!1e4!1e8!1e6!5m1!1e2!6m1!1e2&callback=_xdc_._misdlu", true);
+   //xhttp.send();
+
+	
+
+}
+function locatiosCombiner(lat1,lng1){
+
+	var xhttpd = new XMLHttpRequest();
+	xhttpd.open("GET","https://www.google.com/maps/preview/photo?authuser=0&hl=en&pb=!1e3!5m53!2m2!1i203!2i100!3m2!2i4!5b1!7m42!1m3!1e1!2b0!3e3!1m3!1e2!2b1!3e2!1m3!1e2!2b0!3e3!1m3!1e3!2b0!3e3!1m3!1e8!2b0!3e3!1m3!1e3!2b1!3e2!1m3!1e9!2b1!3e2!1m3!1e10!2b0!3e3!1m3!1e10!2b1!3e2!1m3!1e10!2b0!3e4!2b1!4b1!8m2!1m1!1e2!9b0!6m3!1s!7e81!15i11021!9m2!2d"+lng1+"!3d"+lat1+"!10d25",false);
+	xhttpd.send(null);
+	//console.log(xhttpd);
+	var textaki;
+	var string = xhttpd.responseText;
+	textaki=string.split("\"");		
+					
+	//console.log(textaki[1]);
+
+    return textaki[1];
+}
 PANO_X = 13312;
 PANO_Y = 6656;
 TILE = 512;
@@ -390,12 +445,27 @@ function process() {
     $(canvas).attr("height", PANO_Y * resolution);
     $(canvas).attr("clientHeight", PANO_Y * resolution);
     $("#images").append(canvas);
-    count = 26 * 13;
-    for (var x = 0; x <= 25; x++)
-        for (var y = 0; y <= 12; y++) {
+	var adimen;
+	var bdimen;
+	if(googleUser==2){
+		adimen=26;
+		bdimen=13;
+	}
+	else{
+		
+		adimen=15;
+		bdimen=8;
+	}
+	 count = adimen * bdimen;
+    for (var x = 0; x <= adimen-1; x++)
+        for (var y = 0; y <= bdimen-1; y++) {
+		
             create(panoid, x, y, resolution);
             //             count--;
         }
+	
+
+		
 }
 
 DO_DEPTH = false;
@@ -409,7 +479,7 @@ function create(panoid, x, y, resolution) {
         var ctx = canvas.getContext("2d");
         ctx.drawImage(img, x * TILE * resolution, y * TILE * resolution, TILE * resolution, TILE * resolution);
         if (count == 0) {
-            saveCanvas("canvas", "image/jpeg", buildFilename()+".jpg" );
+           // saveCanvas("canvas", "image/jpeg", buildFilename()+".jpg" );
             if (DO_DEPTH) {
                 grabDepth(0);
             }
@@ -421,7 +491,11 @@ function create(panoid, x, y, resolution) {
             
         }
     }
+	if(googleUser==2){
     img.src = "http://cbk0.google.com/cbk?output=tile&panoid=" + panoid + "&zoom=5&x=" + x + "&y=" + y;
+	} else{
+	img.src = "https://lh3.ggpht.com/p/"+varsds+"=x" + x + "-y"+y+"-z4"
+	}
 }
 
 function grabDepth(count) {
